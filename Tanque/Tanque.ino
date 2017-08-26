@@ -3,7 +3,7 @@ const int pingPin = 6; // Ultrasom
 int led1 = 13; //vermelho
 int led2 = 12; //Verde
 int led3 = 11; //Azul
-long cm;
+long Alt;
 
 void setup() {
   Serial.begin(9600);  
@@ -39,10 +39,31 @@ void loop() {
   //-----------------------------------------------------------------
   //Sensor ultrasom--------------------------------------------------
   Ultrasom();
-  Serial.print(cm);
-  Serial.print("cm");
-  Serial.println();
-  delay(100); 
+//  Serial.print(Alt);
+//  Serial.print("cm");
+//  Serial.println();
+//  delay(100); 
+
+  //calculo volume-------------------------------------------------------------------------
+  float Tcm3_ret = 0;
+  int Larg_ret = 10; //em cm
+  int Comp_ret = 10; //em cm
+  float Litros = 0;
+  Tcm3_ret = Larg_ret * Comp_ret * Alt;
+  Litros = Tcm3_ret/1000;
+  Serial.print(Tcm3_ret);
+  Serial.print("cm3");
+  Serial.print(" - ");
+  Serial.print(Litros);
+  Serial.println("L");
+  delay(1000);
+
+
+
+
+  //-----------------------------------------------------------------
+
+
 
   //WIFI -------------------------------------------------------------------------
 
@@ -72,7 +93,7 @@ void Ultrasom(){
   duration = pulseIn(pingPin, HIGH);
 
   // convert the time into a distance
-  cm = microsecondsToCentimeters(duration);
+  Alt = microsecondsToCentimeters(duration);
 
 }
 
@@ -82,6 +103,9 @@ long microsecondsToCentimeters(long microseconds) {
   // take half of the distance travelled.
   return microseconds / 29 / 2;
 }
+
+
+
 
 
 
