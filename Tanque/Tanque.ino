@@ -39,25 +39,34 @@ void loop() {
   //-----------------------------------------------------------------
   //Sensor ultrasom--------------------------------------------------
   Ultrasom();
-//  Serial.print(Alt);
-//  Serial.print("cm");
-//  Serial.println();
-//  delay(100); 
+  //  Serial.print(Alt);
+  //  Serial.print("cm");
+  //  Serial.println();
+  //  delay(100); 
 
   //calculo volume-------------------------------------------------------------------------
   float Tcm3_ret = 0;
   int Larg_ret = 10; //em cm
   int Comp_ret = 10; //em cm
+  int Altura_max_tanque = 60;
   float Litros = 0;
-  Tcm3_ret = Larg_ret * Comp_ret * Alt;
+  Tcm3_ret = Larg_ret * Comp_ret * (Altura_max_tanque-Alt);
+  if (Tcm3_ret < 0)
+    Tcm3_ret = 0;
   Litros = Tcm3_ret/1000;
   Serial.print(Tcm3_ret);
   Serial.print("cm3");
   Serial.print(" - ");
   Serial.print(Litros);
   Serial.println("L");
-  delay(1000);
+  delay(300);
 
+  if (Litros <= 4)
+    nivel = 3;
+  if (Litros > 4)
+    nivel = 2;
+  if (Litros == 0)
+    nivel = 1;
 
 
 
@@ -103,6 +112,11 @@ long microsecondsToCentimeters(long microseconds) {
   // take half of the distance travelled.
   return microseconds / 29 / 2;
 }
+
+
+
+
+
 
 
 
