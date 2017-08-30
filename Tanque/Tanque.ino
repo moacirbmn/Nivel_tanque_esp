@@ -1,37 +1,56 @@
+#include <ESP8266WiFi.h>
+WiFiServer server(80); //Initialize the server on Port 80
+
 int nivel = 0;
-const int pingPin = 6; // Ultrasom
-int led1 = 13; //vermelho
-int led2 = 12; //Verde
-int led3 = 11; //Azul
+const int pingPin = 15; // Ultrasom
+const int led1 = 13; //vermelho
+const int led2 = 5; //Verde
+const int led3 = 4; //Azul
 long Alt;
 
 void setup() {
-  Serial.begin(9600);  
+  Serial.begin(115200);
+
+  WiFi.mode(WIFI_AP); //Our ESP8266-12E is an AccessPoint
+  WiFi.softAP("Tanque_IoT", "12345678"); // Provide the (SSID, password); .
+  server.begin(); // Start the HTTP Server
+
+  // Looking under the hood
+  Serial.begin(115200); //Start communication between the ESP8266-12E and the monitor window
+  IPAddress HTTPS_ServerIP = WiFi.softAPIP(); // Obtain the IP of the Server
+  Serial.print("Server IP is: "); // Print the IP to the monitor window
+  Serial.println(HTTPS_ServerIP);
+
   pinMode(led1, OUTPUT);
-  pinMode(led2, OUTPUT);     
-  pinMode(led3, OUTPUT);     
+  pinMode(led2, OUTPUT);
+  pinMode(led3, OUTPUT);
+
+  digitalWrite(led1, HIGH);
+  digitalWrite(led2, HIGH);
+  digitalWrite(led3, HIGH);
 
 }
 
 // the loop routine runs over and over again forever:
 void loop() {
 
-  //estado do led --------------------------------------------------
-  digitalWrite(led1, HIGH);
-  digitalWrite(led2, HIGH);
-  digitalWrite(led3, HIGH);
+  //WIFI -------------------------------------------------------------------------
+  WIFI();
 
-  if (nivel == 1)  
+  //estado do led --------------------------------------------------
+
+
+  if (nivel == 1)
     digitalWrite(led1, LOW);
   else
     digitalWrite(led1, HIGH);
 
-  if (nivel == 2)  
+  if (nivel == 2)
     digitalWrite(led2, LOW);
   else
     digitalWrite(led2, HIGH);
 
-  if (nivel == 3)  
+  if (nivel == 3)
     digitalWrite(led3, LOW);
   else
     digitalWrite(led3, HIGH);
@@ -42,7 +61,7 @@ void loop() {
   //  Serial.print(Alt);
   //  Serial.print("cm");
   //  Serial.println();
-  //  delay(100); 
+  // delay(100);
 
   //calculo volume-------------------------------------------------------------------------
   float Tcm3_ret = 0;
@@ -50,16 +69,16 @@ void loop() {
   int Comp_ret = 10; //em cm
   int Altura_max_tanque = 60;
   float Litros = 0;
-  Tcm3_ret = Larg_ret * Comp_ret * (Altura_max_tanque-Alt);
+  Tcm3_ret = Larg_ret * Comp_ret * (Altura_max_tanque - Alt);
   if (Tcm3_ret < 0)
     Tcm3_ret = 0;
-  Litros = Tcm3_ret/1000;
-  Serial.print(Tcm3_ret);
-  Serial.print("cm3");
-  Serial.print(" - ");
-  Serial.print(Litros);
-  Serial.println("L");
-  delay(300);
+  Litros = Tcm3_ret / 1000;
+  /* Serial.print(Tcm3_ret);
+    Serial.print("cm3");
+    Serial.print(" - ");
+    Serial.print(Litros);
+    Serial.println("L");
+    delay(300);*/
 
   if (Litros <= 4)
     nivel = 3;
@@ -72,21 +91,9 @@ void loop() {
 
   //-----------------------------------------------------------------
 
-
-
-  //WIFI -------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
 }
 
-void Ultrasom(){
+void Ultrasom() {
   long duration;
   pinMode(pingPin, OUTPUT);
   digitalWrite(pingPin, LOW);
@@ -114,14 +121,39 @@ long microsecondsToCentimeters(long microseconds) {
 }
 
 
+void WIFI() {
+  while ( WiFiClient client = server.available()) {
+    if (!client) {
+      return;
+    }
+    //Looking under the hood
+    Serial.println("Somebody has connected :)");
 
+    //Read what the browser has sent into a String class and print the request to the monitor
+    String request = client.readString();
+    //Looking under the hood
+    Serial.println(request);
+    // Handle the Request
 
+    if (request.indexOf("/OFF") != -1) {
+      digitalWrite(led3, HIGH);
+    }
+    else if (request.indexOf("/ON") != -1) {
+      digitalWrite(led3, LOW);
+    }
+    String s = "HTTP/1.1 200 OK\r\n";
+    s += "Content-Type: text/html\r\n\r\n";
+    s += "<!DOCTYPE HTML>\r\n<html>\r\n";
+    s += "<br><input type=\"button\" name=\"b1\" value=\"Ligar LED ON\" onclick=\"location.href='/ON\">";
+    s += "<br><br><br>";
+    s += "<br><input type=\"button\" name=\"b1\" value=\"Desliga LED OFF\" onclick=\"location.href='/OFF\">";
+    s += "</html>\n";
 
+    client.flush(); //clear previous info in the stream
+    client.print(s); // Send the response to the client
+    delay(1);
+    Serial.println("Client disonnected"); //Looking under the hood
 
-
-
-
-
-
-
+  }
+}
 
