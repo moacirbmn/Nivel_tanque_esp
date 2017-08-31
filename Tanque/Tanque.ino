@@ -7,6 +7,9 @@ const int led1 = 13; //vermelho
 const int led2 = 5; //Verde
 const int led3 = 4; //Azul
 long Alt;
+float Tcm3_ret = 0;
+float Litros = 0;
+int Porce;
 
 void setup() {
   Serial.begin(115200);
@@ -25,9 +28,7 @@ void setup() {
   pinMode(led2, OUTPUT);
   pinMode(led3, OUTPUT);
 
-  digitalWrite(led1, HIGH);
-  digitalWrite(led2, HIGH);
-  digitalWrite(led3, HIGH);
+
 
 }
 
@@ -39,6 +40,9 @@ void loop() {
 
   //estado do led --------------------------------------------------
 
+  digitalWrite(led1, HIGH);
+  digitalWrite(led2, HIGH);
+  digitalWrite(led3, HIGH);
 
   if (nivel == 1)
     digitalWrite(led1, LOW);
@@ -64,28 +68,32 @@ void loop() {
   // delay(100);
 
   //calculo volume-------------------------------------------------------------------------
-  float Tcm3_ret = 0;
-  int Larg_ret = 10; //em cm
-  int Comp_ret = 10; //em cm
-  int Altura_max_tanque = 60;
-  float Litros = 0;
-  Tcm3_ret = Larg_ret * Comp_ret * (Altura_max_tanque - Alt);
+  float Larg_ret = 36; //em cm
+  float Comp_ret = 24.5; //em cm
+  int Altura_max_tanque = 25;
+  int Alt_seg = 3;
+  float Alt_total = (Altura_max_tanque - Alt_seg) - Alt;
+  if (Alt_total < 0)
+    Alt_total = 0;
+  Tcm3_ret = Larg_ret * Comp_ret * Alt_total;
   if (Tcm3_ret < 0)
     Tcm3_ret = 0;
   Litros = Tcm3_ret / 1000;
-  /* Serial.print(Tcm3_ret);
-    Serial.print("cm3");
-    Serial.print(" - ");
-    Serial.print(Litros);
-    Serial.println("L");
-    delay(300);*/
+  Serial.print(Tcm3_ret);
+  Serial.print("cm3");
+  Serial.print(" - ");
+  Serial.print(Litros);
+  Serial.println("L");
+  delay(300);
 
-  if (Litros <= 4)
-    nivel = 3;
-  if (Litros > 4)
-    nivel = 2;
-  if (Litros == 0)
+  Porce = (Alt_total * 100) / Altura_max_tanque;
+  if (Porce <= 30)
     nivel = 1;
+  if (Porce > 30)
+    if (Porce <= 60)
+      nivel = 3;
+  if (Porce > 70)
+    nivel = 2;
 
 
 
@@ -135,18 +143,23 @@ void WIFI() {
     Serial.println(request);
     // Handle the Request
 
-    if (request.indexOf("/OFF") != -1) {
-      digitalWrite(led3, HIGH);
-    }
-    else if (request.indexOf("/ON") != -1) {
-      digitalWrite(led3, LOW);
-    }
+    //  if (request.indexOf("/OFF") != -1) {
+    //     digitalWrite(led3, HIGH);
+    //  }
+    //else if (request.indexOf("/ON") != -1) {
+    //digitalWrite(led3, LOW);
+
+
+    // }
     String s = "HTTP/1.1 200 OK\r\n";
     s += "Content-Type: text/html\r\n\r\n";
     s += "<!DOCTYPE HTML>\r\n<html>\r\n";
-    s += "<br><input type=\"button\" name=\"b1\" value=\"Ligar LED ON\" onclick=\"location.href='/ON\">";
+    s += "<title>Nivel de Tanque</title>";
+    s += "\r\n\r\n<h2>Volume em Litros do tanque = </h2>";
+    s += Litros;
+    s += "\r\n\r\n\r\n<h3>Porcentagem do tanque = </h3>";
+    s += Porce;
     s += "<br><br><br>";
-    s += "<br><input type=\"button\" name=\"b1\" value=\"Desliga LED OFF\" onclick=\"location.href='/OFF\">";
     s += "</html>\n";
 
     client.flush(); //clear previous info in the stream
@@ -156,4 +169,3 @@ void WIFI() {
 
   }
 }
-
